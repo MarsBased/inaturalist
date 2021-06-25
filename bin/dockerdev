@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+cd .dockerdev
+
+case "$1" in
+ setup-localhost-alias)
+   cp ../.dockerdev/com.user.docker-host-alias.plist /Library/LaunchDaemons/
+   chmod 0644 /Library/LaunchDaemons/com.user.docker-host-alias.plist
+   chown root:wheel /Library/LaunchDaemons/com.user.docker-host-alias.plist
+   launchctl load /Library/LaunchDaemons/com.user.docker-host-alias.plist
+   ;;
+ start)
+   docker-compose up -d $2
+   docker attach $(docker-compose ps -q $2)
+   ;;
+ start-services)
+   docker-compose up -d postgis redis elasticsearch
+   ;;
+ run)
+   docker-compose up -d runner
+   docker-compose exec runner "${@:2}"
+   ;;
+ api-run)
+   docker-compose up -d api-runner
+   docker-compose exec api-runner "${@:2}"
+   ;;
+ stop)
+   docker-compose down
+   ;;
+ server)
+   docker-compose up -d rails && docker attach $(docker-compose ps -q rails)
+   ;;
+ api-server)
+   docker-compose up -d api && docker attach $(docker-compose ps -q api)
+   ;;
+ jobs)
+   docker-compose up -d jobs && docker attach $(docker-compose ps -q jobs)
+   ;;
+ compile-assets)
+   npm install
+   docker-compose run --rm runner ./node_modules/.bin/gulp webpack
+   ;;
+ setup)
+   docker-compose build --no-cache
+   docker-compose run --rm runner setup
+   docker-compose run --rm runner npm install
+   docker-compose run --rm runner ./node_modules/.bin/gulp webpack
+   ;;
+  api-setup)
+   docker-compose run --rm api-runner npm install
+   docker-compose run --rm api-runner cp config_example.js config.js
+   ;;
+ setup-localhost-alias)
+   cp com.user.docker-host-alias.plist /Library/LaunchDaemons/
+   chmod 0644 /Library/LaunchDaemons/com.user.docker-host-alias.plist
+   chown root:wheel /Library/LaunchDaemons/com.user.docker-host-alias.plist
+   launchctl load /Library/LaunchDaemons/com.user.docker-host-alias.plist
+   ;;
+ *)
+   docker-compose up -d runner
+   docker-compose exec runner $*
+   ;;
+esac

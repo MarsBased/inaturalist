@@ -1,0 +1,12 @@
+FROM node:12.13.0
+
+# Install base system dependencies
+RUN apt-get update -qq && apt-get install -yq --no-install-recommends build-essential tzdata curl wget
+RUN apt-get install -yq imagemagick libimage-exiftool-perl
+
+ENV LANG=C.UTF-8
+
+# Create a directory for the app code
+RUN mkdir -p /app
+
+WORKDIR /app
