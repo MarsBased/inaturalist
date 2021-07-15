@@ -14,13 +14,13 @@ base: &base
 
     rest_auth:
         # See vendor/plugins/restful_authentication/notes/Tradeoffs.txt for more info
-        REST_AUTH_SITE_KEY: 09af09af09af09af09af09af09af09af09af09af
-        REST_AUTH_DIGEST_STRETCHES: 10
+        REST_AUTH_SITE_KEY: <%= ENV['REST_AUTH_SITE_KEY'] || '09af09af09af09af09af09af09af09af09af09af' %>
+        REST_AUTH_DIGEST_STRETCHES: <%= ENV['REST_AUTH_DIGEST_STRETCHES'] || 10 %>
 
     rails:
         # Issue {rake secret} to get a new one
-        session_key: _yoursite_session
-        secret: 09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af
+        session_key: <%= ENV['SESSION_NAME'] || '_yoursite_session' %>
+        secret: <%= ENV['SECRET_KEY_BASE'] || '09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af09af' %>
 
     # google_analytics:
     #     # http://www.google.com/analytics/sign_up.html
@@ -29,35 +29,35 @@ base: &base
 
     ubio:
         # http://www.ubio.org/index.php?pagename=form
-        key: 09af09af09af09af09af09af09af09af09af09af
+        key: <%= ENV['UBIO_KEY'] || '09af09af09af09af09af09af09af09af09af09af' %>
 
     yahoo_dev_network:
         # first need Yahoo account: https://edit.yahoo.com/registration
         # then need to sign up for Yahoo Developers Network app interface:
         # https://developer.apps.yahoo.com/wsregapp/
-        app_id: 09azAZ09azAZ09azAZ09azAZ09azAZ09azAZ09az09azAZ09azAZ09azAZ09
+        app_id: <%= ENV['YAHOO_DEV_NETWORK'] || '09azAZ09azAZ09azAZ09azAZ09azAZ09azAZ09az09azAZ09azAZ09azAZ09' %>
 
     tile_servers:
         # EXPERIMENTAL: These endpoints should return map tiles when hit with
         # requests like /{Z}/{X}/{Y}.png.
         # See http://bitbucket.org/springmeyer/tilelite/
-        observations: 'http://localhost:8000'
-        tilestache: 'http://localhost:8080'
-        elasticsearch: http://localhost:4000
+        observations: <%= ENV['TILE_SERVER_OBSERVATIONS'] || 'http://localhost:8000' %>
+        tilestache: <%= ENV['TILE_SERVER_CACHE'] || 'http://localhost:8000' %>
+        elasticsearch: <%= ENV['TILE_SERVER_ELASTICSEARCH'] || 'http://localhost:4000' %>
 
     google_webmaster:
-        verification: abiglongkey
+        verification: <%= ENV['GOOGLE_WEBMASTER_KEY'] || 'abiglongkey' %>
 
-    s3_bucket: yourbucketname
+    s3_bucket: <%= ENV['S3_BUCKET'] || 'yourbucketname' %>
     s3_protocol: https
-    s3_region: us-east-1
+    s3_region: <%= ENV['S3_REGION'] || 'us-east-1' %>
 
-    memcached: localhost
+    memcached: <%= ENV['MEMCACHED_URL'] || 'localhost' %>
 
     # Key for spam filtering with akismet. See http://akismet.com/development/api/
     rakismet:
-      key: abc123
-      site_url: http://www.yoursite.com
+      key: <%= ENV['RAKISMET_KEY'] || 'abc123' %>
+      site_url: <%= ENV['SITE_URL'] || 'http://www.yoursite.com' %>
 
     # facebook:
     #     app_id: 00000000000
@@ -80,22 +80,22 @@ base: &base
 
     flickr:
         # http://www.flickr.com/services/api/keys/apply/
-        key: 09af09af09af09af09af09af09af09af
-        shared_secret: 09af09af09af09af
+        key: <%= ENV['FLICKR_KEY'] || '09af09af09af09af09af09af09af09af' %>
+        shared_secret: <%= ENV['FLICKR_SHARED_SECRET'] || '09af09af09af09af09af09af09af09af' %>
 
     soundcloud:
         # http://soundcloud.com/you/apps/new
-        client_id: 09af09af09af09af09af09af09af09af
-        secret: 09af09af09af09af09af09af09af09af
+        client_id: <%= ENV['SOUNDCLOUD_CLIENT_ID'] || '09af09af09af09af09af09af09af09af' %>
+        secret: <%= ENV['SOUNDCLOUD_SECRET'] || '09af09af09af09af09af09af09af09af' %>
 
     google:
         # This should be a Google API key that can use Google maps
         # https://developers.google.com/maps/documentation/javascript/get-api-key#get-an-api-key
-        browser_api_key: 09af09af09af09af09af09af09af09af
+        browser_api_key: <%= ENV['GOOGLE_BROWSER_API_KEY'] || '09af09af09af09af09af09af09af09af' %>
         # client_id and secret should come from a Google OAuth 2.0 client ID
         # https://console.developers.google.com/apis/credentials
-        client_id: 09af09af09af09af09af09af09af09af
-        secret: 09af09af09af09af09af09af09af09af
+        client_id: <%= ENV['GOOGLE_CLIENT_ID'] || '09af09af09af09af09af09af09af09af' %>
+        secret: <%= ENV['GOOGLE_SECRET'] || '09af09af09af09af09af09af09af09af' %>
 
     metadata_provider:
 
@@ -105,26 +105,26 @@ base: &base
     #     key: 0x0x0x0x0x0x0x0x
 
     # config.action_dispatch.x_sendfile_header. Most servers use X-Sendfile, but nginx prefers X-Accel-Redirect
-    x_sendfile_header: 'X-Sendfile'
+    x_sendfile_header: <%= ENV['X_SENDFILE_HEADER'] || 'X-Sendfile' %>
 
-    # # GBIF login credentials. Currently only used in 
-    # # tools/gbif_observation_links.rb, so only useful if you send data 
+    # # GBIF login credentials. Currently only used in
+    # # tools/gbif_observation_links.rb, so only useful if you send data
     # # to GBIF
     # gbif:
     #     username: yourusername
     #     password: yourpassword
     #     notification_address: you@you.com
-    
+
     # Elastic search for search indexing, other performance improvements
-    # ES also runs a syncing service on port 9300 by default. You want to use 
-    # the API port. See 
-    # http://stackoverflow.com/questions/19510659/java-io-streamcorruptedexception-invalid-internal-transport-message-format 
+    # ES also runs a syncing service on port 9300 by default. You want to use
+    # the API port. See
+    # http://stackoverflow.com/questions/19510659/java-io-streamcorruptedexception-invalid-internal-transport-message-format
     # for more details
-    elasticsearch_host: http://localhost:9200
+    elasticsearch_host: <%= ENV['ES_URL'] || 'http://localhost:9200' %>
 
     # An instance of https://github.com/inaturalist/iNaturalistAPI, the
     # same code running at CONFIG.tile_servers.elasticsearch
-    node_api_url: http://localhost:4000/v1
+    node_api_url: <%= ENV['NODE_API_URL'] || 'http://localhost:4000/v1' %>
 
     # # Path to the CA .crt file
     # ca_file: "/path/to/certs/ca-bundle.crt"

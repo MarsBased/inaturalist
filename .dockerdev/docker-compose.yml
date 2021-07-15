@@ -1,0 +1,162 @@
+version: '3.4'
+
+x-app: &app
+  build:
+    context: .
+    dockerfile: ./Dockerfile
+    args:
+      BUNDLER_VERSION: '1.17.3'
+      NODE_VERSION: '12.13.0'
+  image: minka-dev
+  tmpfs:
+    - /tmp
+
+x-backend: &backend
+  <<: *app
+  stdin_open: true
+  tty: true
+  environment: &backend-env
+    NODE_ENV: ${NODE_ENV:-development}
+    RAILS_ENV: ${RAILS_ENV:-development}
+    REDIS_URL: redis://redis:6379/
+    REDIS_HOST: redis
+    REDIS_POST: 6379
+    DATABASE_URL: postgres://postgres:postgres@postgis:5432
+    DATABASE_USERNAME: postgres
+    DATABASE_PASSWORD: postgres
+    DATABASE_HOST: postgis
+    SELENIUM_URL: http://selenium:4444/wd/hub
+    TEST_APP_HOST: 'http://test'
+    TEST_APP_PORT: 8200
+    AWS_REGION: eu-west-1
+    AWS_ACCESS_KEY_ID: minio
+    AWS_SECRET_ACCESS_KEY: 2NVQWHvTT73XMgqapGchy6yAtwHezMZn
+    S3_BUCKET: minka-development
+    S3_FORCE_PATH: 'true'
+    S3_ENDPOINT: http://172.17.0.1:9000
+    NODE_API_URL: http://172.17.0.1:4000/v1
+    ES_URL: http://elasticsearch:9200
+    JWT_SECRET: jwtSecret
+    JWT_APP_SECRET: jwtApplicationSecret
+
+    # Misc
+    BOOTSNAP_CACHE_DIR: /bundle/bootsnap
+    WEBPACKER_DEV_SERVER_HOST: webpacker
+    WEB_CONCURRENCY: 1
+    HISTFILE: /app/log/.bash_history
+    EDITOR: vi
+  volumes:
+    - ../:/app:cached
+    - rails_cache:/app/tmp/cache
+    - bundle:/bundle
+    - node_modules:/app/node_modules
+    - ./scripts:/scripts:ro
+    - ./.psqlrc:/root/.psqlrc:ro
+    - ./.pryrc:/root/.pryrc:ro
+  depends_on:
+    - postgis
+    - redis
+    - elasticsearch
+x-api: &api
+  build:
+    context: .
+    dockerfile: ./Dockerfile.api
+  environment: &api-env
+    ES_URL: http://elasticsearch:9200
+    DATABASE_USERNAME: postgres
+    DATABASE_PASSWORD: postgres
+    DATABASE_HOST: postgis
+    DATABASE_PORT: 5432
+    REDIS_HOST: redis
+    REDIS_POST: 6379
+    API_URL: http://172.17.0.1:3000
+    CURRENT_VERSION_URL: http://localhost:4000/v1
+    STATIC_IMAGE_PREFIX: http://172.17.0.1:3000/attachments/
+    JWT_SECRET: jwtSecret
+    JWT_APP_SECRET: jwtApplicationSecret
+  image: minka-api-dev
+  tmpfs:
+    - /tmp
+  stdin_open: true
+  tty: true
+  volumes:
+    - ../iNaturalistAPI:/app:cached
+    - node_modules_api:/app/node_modules
+    - ./.psqlrc:/root/.psqlrc:ro
+  depends_on:
+    - postgis
+    - redis
+    - elasticsearch
+
+services:
+  rails:
+    <<: *backend
+    command: bundle exec rails server -b 0.0.0.0
+    ports:
+      - 3000:3000
+  api:
+    <<: *api
+    command: node app.js
+    ports:
+      - 4000:4000
+
+  runner:
+    <<: *backend
+    command: /bin/bash
+    environment:
+      <<: *backend-env
+      HOST: http://rails:3000
+      DOMAIN: http://localhost:3000
+
+  api-runner:
+    <<: *api
+    command: /bin/bash
+
+  jobs:
+    <<: *backend
+    command: bundle exec sidekiq -C config/sidekiq.yml
+    environment:
+      <<: *backend-env
+      HOST: http://rails:3000
+
+  postgis:
+    image: postgis/postgis
+    volumes:
+      - ./.psqlrc:/root/.psqlrc:ro
+      - ./volumes/postgis:/var/lib/postgresql/data
+      - ./log:/root/log:cached
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - 5432
+
+  elasticsearch:
+    image: kaibadash/elasticsearch-kuromoji:7.3.1
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=es-docker-cluster
+      - cluster.initial_master_nodes=elasticsearch
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./volumes/elasticsearch:/usr/share/elasticsearch/data
+    ports:
+      - 9200
+
+  redis:
+    image: redis:6.2-alpine
+    volumes:
+      - redis:/data
+    ports:
+      - 6379
+
+volumes:
+  redis:
+  bundle:
+  node_modules:
+  node_modules_api:
+  rails_cache:
